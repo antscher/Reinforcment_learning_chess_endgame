@@ -4,3 +4,8 @@ In this repository, we want to devellop an IA bot for endgame problems such as K
 Organisation : 
 - In folder our build environnment
 - Jupyter note book for results and trainning only
+
+  Structure (folder) :
+  - States : creation of a state for our matrix
+  - Sunfish_bot_from_github com from https://github.com/thomasahle
+  
