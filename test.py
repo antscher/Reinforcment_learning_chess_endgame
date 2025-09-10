@@ -20,8 +20,7 @@ board = chess.Board("8/8/1k6/8/8/4K3/3R4/8 w - - 0 1")
 #Print the board
 print(board)
 
-Nf3 = chess.Move.from_uci("g1f3")
-board.push(Nf3)  # Make the move
+board.push_san("Rd6")  # Make the move
 
 board.pop()  # Unmake the last move
 
@@ -38,4 +37,14 @@ board.can_claim_threefold_repetition() #boolean
 #Get legal move in UCI
 board.legal_moves
 
+"""
+#No test yet but for visualisation
+import chess.svg
 
+board = chess.Board("8/8/8/8/4N3/8/8/8 w - - 0 1")
+
+chess.svg.board(
+    board,
+    size=350,
+)  
+"""
