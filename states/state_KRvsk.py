@@ -31,6 +31,31 @@ class State:
         self.pieces['WKing'] = w_king
         self.pieces['WRook'] = w_rook
         self.pieces['BKing'] = b_king
+
+    def create_from_fen(self, fen):
+        """
+        Create a new state from a FEN string.
+        
+        Args:
+            fen (str): FEN string representing the board state
+        """
+        piece_map = {
+            'K': 'WKing',
+            'R': 'WRook',
+            'k': 'BKing'
+        }
+        
+        rows = fen.split(' ')[0].split('/')
+        for r, row in enumerate(rows):
+            c = 0
+            for char in row:
+                if char.isdigit():
+                    c += int(char)
+                elif char in piece_map:
+                    self.pieces[piece_map[char]] = (r, c)
+                    c += 1
+                else:
+                    c += 1
     
     def update(self, piece_name, new_position):
         """
@@ -57,80 +82,89 @@ class State:
         """
         return self.pieces.get(piece_name)
     
-    def position_to_string(self, position):
+
+    def get_new_state(self, uci_move):
         """
-        Convert a position tuple to chess notation string.
+        Get a new state resulting from a UCI move.
         
         Args:
-            position (tuple): Position as (row, col)
-            
+            uci_move (str): The UCI move string (e.g., 'Rf3')
+
         Returns:
-            str: Position in chess notation (e.g., 'e4')
+            State: A new state reflecting the move
         """
-        if position is None:
-            return None
+        piece_map = {
+            'K': 'WKing',
+            'R': 'WRook',
+            'k': 'BKing'
+        }
         
-        row, col = position
-        if not (0 <= row <= 7 and 0 <= col <= 7):
-            raise ValueError(f"Invalid position: {position}")
+        piece_char = uci_move[0]
+        target_square = uci_move[1:3]
         
-        # Convert to chess notation: columns a-h, rows 1-8
-        col_letter = chr(ord('a') + col)
-        row_number = str(row + 1)
-        return col_letter + row_number
+        if piece_char not in piece_map:
+            raise ValueError(f"Invalid piece character in move: {piece_char}")
+        
+        piece_name = piece_map[piece_char]
+        col = ord(target_square[0]) - ord('a')
+        row = 8 - int(target_square[1])
+        
+        new_state = State(
+            w_king=self.pieces['WKing'],
+            w_rook=self.pieces['WRook'],
+            b_king=self.pieces['BKing']
+        )
+        new_state.update(piece_name, (row, col))
+        
+        return new_state
     
-    def string_to_position(self, position_string):
+    def print_state(self):
         """
-        Convert a chess notation string to position tuple.
-        
-        Args:
-            position_string (str): Position in chess notation (e.g., 'e4')
-            
-        Returns:
-            tuple: Position as (row, col)
+        Print the current state of the board.
         """
-        if position_string is None or len(position_string) != 2:
-            raise ValueError(f"Invalid position string: {position_string}")
+        board = [['.' for _ in range(8)] for _ in range(8)]
         
-        col_letter = position_string[0].lower()
-        row_number = position_string[1]
-        
-        if not ('a' <= col_letter <= 'h' and '1' <= row_number <= '8'):
-            raise ValueError(f"Invalid position string: {position_string}")
-        
-        col = ord(col_letter) - ord('a')
-        row = int(row_number) - 1
-        
-        return (row, col)
-    
-    def get_positions_as_strings(self):
-        """
-        Get all piece positions as chess notation strings.
-        
-        Returns:
-            dict: Dictionary with piece names and their positions as strings
-        """
-        string_positions = {}
         for piece, position in self.pieces.items():
-            string_positions[piece] = self.position_to_string(position)
-        return string_positions
-    
-    def set_position_from_string(self, piece_name, position_string):
-        """
-        Set a piece position using chess notation string.
+            if position:
+                row, col = position
+                symbol = 'K' if piece == 'WKing' else 'k' if piece == 'BKing' else 'R'
+                board[row][col] = symbol
         
-        Args:
-            piece_name (str): Name of the piece ('WKing', 'WRook', 'BKing')
-            position_string (str): Position in chess notation (e.g., 'e4')
+        for row in board:
+            print(' '.join(row))
+
+    def to_fen(self):
         """
-        position = self.string_to_position(position_string)
-        self.update(piece_name, position)
+        Convert the current state to a FEN string.
+        
+        Returns:
+            str: FEN representation of the current state
+        """
+        board = [['1' for _ in range(8)] for _ in range(8)]
+        
+        for piece, position in self.pieces.items():
+            if position:
+                row, col = position
+                symbol = 'K' if piece == 'WKing' else 'k' if piece == 'BKing' else 'R'
+                board[row][col] = symbol
+        
+        fen_rows = []
+        for row in board:
+            fen_row = ''
+            empty_count = 0
+            for cell in row:
+                if cell == '1':
+                    empty_count += 1
+                else:
+                    if empty_count > 0:
+                        fen_row += str(empty_count)
+                        empty_count = 0
+                    fen_row += cell
+            if empty_count > 0:
+                fen_row += str(empty_count)
+            fen_rows.append(fen_row)
+        
+        fen = '/'.join(fen_rows) + ' w - - 0 1'
+        return fen
+
     
-    def __str__(self):
-        """String representation of the state."""
-        string_positions = self.get_positions_as_strings()
-        return f"State(WKing: {string_positions['WKing']}, WRook: {string_positions['WRook']}, BKing: {string_positions['BKing']})"
-    
-    def __repr__(self):
-        """String representation for debugging."""
-        return f"State({self.pieces})"
