@@ -1,4 +1,22 @@
 class QTable:
+    def argmax_epsilon(self, state, epsilon):
+        """
+        Epsilon-greedy action selection: with probability epsilon, choose a random action;
+        otherwise, choose the action with the highest value.
+        Args:
+            state: Hashable representation of the state
+            epsilon: Probability of choosing a random action (float between 0 and 1)
+        Returns:
+            Selected action or None if state not found
+        """
+        import random
+        if state not in self.q_table or not self.q_table[state]:
+            return None
+        actions = list(self.q_table[state].keys())
+        if random.random() < epsilon:
+            return random.choice(actions)
+        return max(self.q_table[state], key=self.q_table[state].get)
+    
     def save(self, filename):
         """
         Save the Q-table to a file in JSON format.
@@ -26,10 +44,12 @@ class QTable:
         Add a state to the Q-table with actions initialized to 0.
         Args:
             state: Hashable representation of the state
-            actions: List of possible actions for the state
+            actions: List of possible actions for the state (UCI format)
         """
+        # Transform UCI actions to algebraic notation using State method
         if state not in self.q_table:
-            self.q_table[state] = {action: 0.0 for action in actions}
+            transformed_actions = [state.uci_to_algebraic(action) for action in actions]
+            self.q_table[state] = {action: 0.0 for action in transformed_actions}
 
     def argmax(self, state):
         """

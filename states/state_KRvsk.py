@@ -1,3 +1,5 @@
+import chess
+
 class State:
     """
     A class to represent a chess endgame state with WKing, WRook, and BKing positions.
@@ -166,5 +168,31 @@ class State:
         
         fen = '/'.join(fen_rows) + ' w - - 0 1'
         return fen
-
     
+    def uci_to_algebraic(self, uci_move):
+        """
+        Convert a UCI move (e.g. 'd2d4') to algebraic notation (e.g. 'Kd4', 'Rd4', etc.) using only the state.
+        Args:
+            uci_move (str): UCI move string
+        Returns:
+            str: Move in algebraic notation
+        """
+        from_square = uci_move[:2]
+        to_square = uci_move[2:4]
+        # Find which piece is at from_square
+        for name, pos in self.pieces.items():
+            if pos:
+                col = chr(pos[1] + ord('a'))
+                row = str(8 - pos[0])
+                if from_square == f"{col}{row}":
+                    if name == 'WKing':
+                        symbol = 'K'
+                    elif name == 'WRook':
+                        symbol = 'R'
+                    elif name == 'BKing':
+                        symbol = 'k'
+                    else:
+                        symbol = name[0]
+                    return f"{symbol}{to_square}"
+        return uci_move
+
