@@ -11,7 +11,7 @@ if __name__ == "__main__":
     qtable = QTable()
     trainer = QTableTrainer(qtable=qtable, epsilon_start=0.2, epsilon_decay=0.999, alpha=0.5, gamma=0.9)
     # Run training for a few episodes
-    trainer.train(episodes=100, initial_fen=initial_fen_mate_1)
+    #trainer.train(episodes=100, initial_fen=initial_fen_mate_1)
     trainer.train(episodes=450, initial_fen=initial_fen_mate_2)
     # Save the Q-table
     trainer.save_qtable("results", "test_trained_qtable.json")

@@ -19,7 +19,7 @@ class QTableTrainer:
         self.gamma = gamma
         self.engine_path = engine_path
 
-    def train(self, episodes=1000, initial_fen=None):
+    def train(self, episodes=1000, initial_fen=" "):
         reward_mate = 100
         reward_draw = -50
         reward_step = -0.1
@@ -32,7 +32,7 @@ class QTableTrainer:
         for ep in range(episodes):
             # Initialize chess board and state
             board = chess.Board(initial_fen)
-            fen = initial_fen
+            fen = initial_fen.split(' ')[0]
 
             done = False
 
@@ -59,14 +59,14 @@ class QTableTrainer:
                     result = engine.play(board, chess.engine.Limit(time=0.1))
                     board.push(result.move)
                     
-                new_fen = board.fen()
+                new_fen = board.fen().split(' ')[0]
 
                 # Check for terminal state
                 if board.is_game_over():
                     done = True
                     result = board.result()
                     print("Game over:", result)
-                    reward = reward_mate if result == '1-0' else -reward_mate if result == '0-1' else -reward_draw
+                    reward = reward_mate if result == '1-0' else -reward_mate if result == '0-1' else reward_draw
                     # Track mate results
                     recent_results.append(result)
                 else:
