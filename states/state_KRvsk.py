@@ -1,6 +1,54 @@
 import chess
 
 class State:
+    @staticmethod
+    def random_kr_vs_k_fen():
+        """
+        Generate a random valid FEN for KR vs k endgame using State class.
+        Ensures kings are not adjacent and black is not in check.
+        Returns:
+            str: Valid FEN string
+        """
+        import random
+        import chess
+
+        def are_kings_adjacent(wk, bk):
+            return max(abs(wk[0] - bk[0]), abs(wk[1] - bk[1])) <= 1
+
+        while True:
+            positions = random.sample([(r, c) for r in range(8) for c in range(8)], 3)
+            wk, wr, bk = positions
+            if are_kings_adjacent(wk, bk):
+                continue
+            # Use State to build and convert to FEN
+            state = State(w_king=wk, w_rook=wr, b_king=bk)
+            fen = state.to_fen()
+            # Custom check: rook attacks black king in row/col, unless white king is between
+            wk_row, wk_col = wk
+            wr_row, wr_col = wr
+            bk_row, bk_col = bk
+
+            def is_between(a, b, c):
+                return min(a, b) < c < max(a, b)
+
+            in_check = False
+            # Rook and black king in same row
+            if wr_row == bk_row:
+                # Is white king between rook and black king in same row?
+                if wk_row == wr_row and is_between(wr_col, bk_col, wk_col):
+                    pass
+                else:
+                    in_check = True
+            # Rook and black king in same column
+            if wr_col == bk_col:
+                # Is white king between rook and black king in same column?
+                if wk_col == wr_col and is_between(wr_row, bk_row, wk_row):
+                    pass
+                else:
+                    in_check = True
+            if in_check:
+                continue
+            return fen
     """
     A class to represent a chess endgame state with WKing, WRook, and BKing positions.
     Positions are stored as tuples of integers (row, col) where 0 <= row, col <= 7.
@@ -195,4 +243,6 @@ class State:
                         symbol = name[0]
                     return f"{symbol}{to_square}"
         return uci_move
+    
+
 

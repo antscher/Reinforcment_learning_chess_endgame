@@ -4,6 +4,15 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from states.state_KRvsk import State
 from states.QTable import QTable
 
+# Test random KR vs k FEN generation
+print("Random KR vs k FEN:")
+random_fen = State.random_kr_vs_k_fen()
+print(random_fen)
+random_state = State()
+random_state.create_from_fen(random_fen)
+random_state.print_state()
+
+
 # Test State class
 fen = "8/8/1k6/8/8/4K3/3R4/8 w - - 0 1"
 state = State()

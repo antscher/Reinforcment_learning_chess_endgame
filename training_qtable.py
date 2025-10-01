@@ -10,14 +10,21 @@ from states import State
 
 
 class QTableTrainer:
-    def __init__(self, qtable: QTable, epsilon=0.1, alpha=0.5, gamma=0.9, engine_path=r"stockfish\stockfish-windows-x86-64-avx2.exe"):
+    def __init__(self, qtable: QTable, epsilon_start=0.1, epsilon_decay=0.99, alpha=0.5, gamma=0.9, engine_path=r"stockfish\stockfish-windows-x86-64-avx2.exe"):
         self.qtable = qtable
-        self.epsilon = epsilon
+        self.epsilon_start = epsilon_start
+        self.epsilon = epsilon_start
+        self.epsilon_decay = epsilon_decay
         self.alpha = alpha
         self.gamma = gamma
         self.engine_path = engine_path
 
     def train(self, episodes=1000, initial_fen=None):
+        reward_mate = 100
+        reward_draw = -50
+        reward_step = -0.05
+
+        self.epsilon = self.epsilon_start
         engine = chess.engine.SimpleEngine.popen_uci(self.engine_path)
 
         for ep in range(episodes):
@@ -35,6 +42,7 @@ class QTableTrainer:
                 action = self.qtable.argmax_epsilon(fen, self.epsilon)
                 if action is None:
                     break
+
                 # Make the move on the board
                 board.push_san(action)
 
@@ -42,7 +50,8 @@ class QTableTrainer:
                 if board.is_game_over():
                     done = True
 
-                reward = -0.05
+                #default small negative reward to encourage faster mate
+                reward = reward_step
                 if not done:
                     # Black (engine)
                     result = engine.play(board, chess.engine.Limit(time=0.1))
@@ -50,12 +59,13 @@ class QTableTrainer:
                     
                 new_fen = board.fen()
 
+                # Check for terminal state
                 if board.is_game_over():
                     done = True
                     print("Game over:", board.result())
-                    reward = 1000 if board.result() == '1-0' else -1000 if board.result() == '0-1' else -100
-                
+                    reward = reward_mate if board.result() == '1-0' else reward_draw if board.result() == '0-1' else -reward_mate
                 else:
+                    # Add new state to Q-table for next iteration
                     self.qtable.add_state(new_fen, [move.uci() for move in board.legal_moves])
 
                 # Q-learning update
@@ -66,8 +76,9 @@ class QTableTrainer:
                 self.qtable.set_action_value(fen, action, new_value)
                 print(f"Episode {ep+1}, State: {fen}, Action: {action}, Reward: {reward}, New Value: {new_value}")
                 fen = new_fen
-                
-                if  done:
+                # Decay epsilon after each episode
+                if done:
+                    self.epsilon = max(0.01, self.epsilon * self.epsilon_decay)
                     break
 
         engine.quit()
@@ -75,4 +86,9 @@ class QTableTrainer:
     def save_qtable(self, folder,filename):
         self.qtable.save(folder,filename)
 
+    def get_qtable(self):
+        return self.qtable
+    
+    def set_qtable(self, qtable: QTable):
+        self.qtable = qtable
 
