@@ -1,23 +1,26 @@
+from states.state_KRvsk import State
+import os
+
 class QTable:
-    def argmax_epsilon(self, state, epsilon):
+    def argmax_epsilon(self, fen, epsilon):
         """
         Epsilon-greedy action selection: with probability epsilon, choose a random action;
         otherwise, choose the action with the highest value.
         Args:
-            state: Hashable representation of the state
+            fen: FEN string representing the state
             epsilon: Probability of choosing a random action (float between 0 and 1)
         Returns:
             Selected action or None if state not found
         """
         import random
-        if state not in self.q_table or not self.q_table[state]:
+        if fen not in self.q_table or not self.q_table[fen]:
             return None
-        actions = list(self.q_table[state].keys())
+        actions = list(self.q_table[fen].keys())
         if random.random() < epsilon:
             return random.choice(actions)
-        return max(self.q_table[state], key=self.q_table[state].get)
-    
-    def save(self, filename):
+        return max(self.q_table[fen], key=self.q_table[fen].get)
+
+    def save(self, folder, filename):
         """
         Save the Q-table to a file in JSON format.
         Args:
@@ -32,57 +35,60 @@ class QTable:
             else:
                 key = str(state)
             serializable_qtable[key] = actions
-        with open(filename, 'w') as f:
+        with open(os.path.join(folder, filename), 'w') as f:
             json.dump(serializable_qtable, f)
             
     def __init__(self):
         # Dictionary mapping state to action-value dictionary
         self.q_table = {}
 
-    def add_state(self, state, actions):
+    def add_state(self, fen,  actions):
         """
         Add a state to the Q-table with actions initialized to 0.
         Args:
-            state: Hashable representation of the state
+            fen: FEN string representing the state
+            state_obj: State object for algebraic conversion
             actions: List of possible actions for the state (UCI format)
         """
         # Transform UCI actions to algebraic notation using State method
-        if state not in self.q_table:
+        if fen not in self.q_table:
+            state = State()
+            state.create_from_fen(fen)
             transformed_actions = [state.uci_to_algebraic(action) for action in actions]
-            self.q_table[state] = {action: 0.0 for action in transformed_actions}
+            self.q_table[fen] = {action: 0.0 for action in transformed_actions}
 
-    def argmax(self, state):
+    def argmax(self, fen):
         """
         Return the action with the highest value for the given state.
         Args:
-            state: Hashable representation of the state
+            fen: FEN string representing the state
         Returns:
             The action with the maximum Q-value, or None if state not found
         """
-        if state not in self.q_table or not self.q_table[state]:
+        if fen not in self.q_table or not self.q_table[fen]:
             return None
-        return max(self.q_table[state], key=self.q_table[state].get)
+        return max(self.q_table[fen], key=self.q_table[fen].get)
 
-    def print_state(self, state):
+    def print_state(self, fen):
         """
         Print the action-value dictionary for a given state.
         Args:
-            state: Hashable representation of the state
+            fen: FEN string representing the state
         """
-        if state in self.q_table:
-            print(self.q_table[state])
+        if fen in self.q_table:
+            print(self.q_table[fen])
         else:
-            print(f"State {state} not found in Q-table.")
+            print(f"State {fen} not found in Q-table.")
 
-    def set_action_value(self, state, action, value):
+    def set_action_value(self, fen, action, value):
         """
         Set the value of a specific action for a given state.
         Args:
-            state: Hashable representation of the state
+            fen: FEN string representing the state
             action: The action to update
             value: The new value to set
         """
-        if state in self.q_table and action in self.q_table[state]:
-            self.q_table[state][action] = value
+        if fen in self.q_table and action in self.q_table[fen]:
+            self.q_table[fen][action] = value
         else:
-            raise KeyError(f"State {state} or action {action} not found in Q-table.")
+            raise KeyError(f"State {fen} or action {action} not found in Q-table.")
