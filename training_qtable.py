@@ -22,10 +22,12 @@ class QTableTrainer:
     def train(self, episodes=1000, initial_fen=None):
         reward_mate = 100
         reward_draw = -50
-        reward_step = -0.05
+        reward_step = -0.1
 
         self.epsilon = self.epsilon_start
         engine = chess.engine.SimpleEngine.popen_uci(self.engine_path)
+
+        recent_results = []  # Track last 20 results
 
         for ep in range(episodes):
             # Initialize chess board and state
@@ -62,8 +64,11 @@ class QTableTrainer:
                 # Check for terminal state
                 if board.is_game_over():
                     done = True
-                    print("Game over:", board.result())
-                    reward = reward_mate if board.result() == '1-0' else reward_draw if board.result() == '0-1' else -reward_mate
+                    result = board.result()
+                    print("Game over:", result)
+                    reward = reward_mate if result == '1-0' else -reward_mate if result == '0-1' else -reward_draw
+                    # Track mate results
+                    recent_results.append(result)
                 else:
                     # Add new state to Q-table for next iteration
                     self.qtable.add_state(new_fen, [move.uci() for move in board.legal_moves])
@@ -76,9 +81,17 @@ class QTableTrainer:
                 self.qtable.set_action_value(fen, action, new_value)
                 print(f"Episode {ep+1}, State: {fen}, Action: {action}, Reward: {reward}, New Value: {new_value}")
                 fen = new_fen
+
                 # Decay epsilon after each episode
                 if done:
                     self.epsilon = max(0.01, self.epsilon * self.epsilon_decay)
+                    # Early stopping: more than 15 mates in last 20 episodes
+                    if len(recent_results) >= 20:
+                        last_20 = recent_results[-20:]
+                        if last_20.count('1-0') > 15:
+                            print(f"Early stopping: {last_20.count('1-0')} mates in last 20 episodes.")
+                            engine.quit()
+                            return
                     break
 
         engine.quit()
