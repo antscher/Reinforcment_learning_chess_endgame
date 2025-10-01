@@ -16,10 +16,11 @@ In this repository, we want to devellop an IA bot for endgame problems such as K
 
 ## Actual rate  trainning
 for a mate in 1 train in approwimatelly 40 episodes
-for a mate in 2 train in approwimatelly 400 episodes (200-400 with previous trainning one 1 mate)
+for a mate in 2 train in approwimatelly 400 episodes (50 with previous trainning on the 1 mate intermediate (equal to mate in 1))
+Idea : decompose in rush of 50 episode on 1 fen, also do double to tenth Qlearnig with multithread to make the learning faster
 
 # For testing
 run file in the test folder
 you need first to intall : "pip install chess"
-try just to ru "test_training.py" for running the Q_table
+try just to run "test_training.py" for running the Q_table
 
