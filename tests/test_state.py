@@ -1,8 +1,17 @@
+
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from states.state_KRvsk import State
 from states.QTable import QTable
+
+# Test symmetry/rotation generation for FEN and action
+print("\nSymmetries and rotations for FEN and action:")
+sample_fen = "8/8/8/8/8/2R5/k1K5/8"
+sample_action = "Ra3"
+symmetries = State.fen_action_symmetries(sample_fen, sample_action)
+for i, (fen, action) in enumerate(symmetries):
+    print(f"{i+1}: FEN: {fen}, Action: {action}")
 
 # Test random KR vs k FEN generation
 print("Random KR vs k FEN:")

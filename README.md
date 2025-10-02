@@ -24,3 +24,8 @@ run file in the test folder
 you need first to intall : "pip install chess"
 try just to run "test_training.py" for running the Q_table
 
+# Idea for making it faster : 
+- start with mate in 1
+- Use symetry (mirror, exactly the same state) (added)
+- Multiple Qlearning
+

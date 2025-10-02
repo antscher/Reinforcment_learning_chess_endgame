@@ -2,6 +2,79 @@ import chess
 
 class State:
     @staticmethod
+    def fen_action_symmetries(fen, action):
+        """
+        Given a FEN and an action, return all FENs and actions associated with 1 or 2 symmetries/rotations using State class.
+        Returns:
+            List of (fen, action) tuples
+        """
+        def rotate_square(square, rot):
+            r, c = square
+            if rot == 0:
+                return r, c
+            elif rot == 90:
+                return c, 7 - r
+            elif rot == 180:
+                return 7 - r, 7 - c
+            elif rot == 270:
+                return 7 - c, r
+        def mirror_square(square, axis):
+            r, c = square
+            if axis == 'h':
+                return 7 - r, c
+            elif axis == 'v':
+                return r, 7 - c
+        def transform_action(action, transform_fn):
+            piece = action[0]
+            col = ord(action[1]) - ord('a')
+            row = 8 - int(action[2])
+            new_row, new_col = transform_fn((row, col))
+            new_square = chr(new_col + ord('a')) + str(8 - new_row)
+            return piece + new_square
+
+        # Use State to parse FEN
+        state = State()
+        state.create_from_fen(fen)
+        piece_map = {
+            'K': state.pieces['WKing'],
+            'R': state.pieces['WRook'],
+            'k': state.pieces['BKing']
+        }
+
+        results = set()
+        transforms = [
+            lambda sq: rotate_square(sq, 0),
+            lambda sq: rotate_square(sq, 90),
+            lambda sq: rotate_square(sq, 180),
+            lambda sq: rotate_square(sq, 270),
+            lambda sq: mirror_square(sq, 'h'),
+            lambda sq: mirror_square(sq, 'v'),
+        ]
+        for i, tf1 in enumerate(transforms):
+            # Apply one transformation
+            new_map = {p: tf1(pos) if pos else None for p, pos in piece_map.items()}
+            new_state = State(
+                w_king=new_map['K'],
+                w_rook=new_map['R'],
+                b_king=new_map['k']
+            )
+            new_fen = new_state.to_fen().split(' ')[0]
+            new_action = transform_action(action, tf1)
+            results.add((new_fen, new_action))
+            # Apply two transformations
+            for j, tf2 in enumerate(transforms):
+                if i == j: continue
+                new_map2 = {p: tf2(tf1(pos)) if pos else None for p, pos in piece_map.items()}
+                new_state2 = State(
+                    w_king=new_map2['K'],
+                    w_rook=new_map2['R'],
+                    b_king=new_map2['k']
+                )
+                new_fen2 = new_state2.to_fen().split(' ')[0]
+                new_action2 = transform_action(action, lambda sq: tf2(tf1(sq)))
+                results.add((new_fen2, new_action2))
+        return list(results)
+    @staticmethod
     def random_kr_vs_k_fen():
         """
         Generate a random valid FEN for KR vs k endgame using State class.
@@ -49,6 +122,7 @@ class State:
             if in_check:
                 continue
             return fen
+        
     """
     A class to represent a chess endgame state with WKing, WRook, and BKing positions.
     Positions are stored as tuples of integers (row, col) where 0 <= row, col <= 7.

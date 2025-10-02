@@ -105,3 +105,5 @@ class QTableTrainer:
     def set_qtable(self, qtable: QTable):
         self.qtable = qtable
 
+
+

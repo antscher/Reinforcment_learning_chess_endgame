@@ -92,3 +92,13 @@ class QTable:
             self.q_table[fen][action] = value
         else:
             raise KeyError(f"State {fen} or action {action} not found in Q-table.")
+    
+    def state_exists(self, fen):
+        """
+        Check if a state exists in the Q-table.
+        Args:
+            fen: FEN string representing the state
+        Returns:
+            True if the state exists, False otherwise
+        """
+        return fen in self.q_table
