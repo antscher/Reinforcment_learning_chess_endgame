@@ -27,7 +27,7 @@ class QTableTrainer:
 
         self.epsilon = self.epsilon_start
         engine = chess.engine.SimpleEngine.popen_uci(self.engine_path)
-
+        start_time = time.time()
         recent_results = []  # Track last 20 results
 
         for ep in range(episodes):
@@ -66,7 +66,7 @@ class QTableTrainer:
                 if board.is_game_over():
                     done = True
                     result = board.result()
-                    print("Game over:", result)
+                    #print("Game over:", result)
                     reward = reward_mate if result == '1-0' else -reward_mate if result == '0-1' else reward_draw
                     # Track mate results
                     recent_results.append(result)
@@ -79,19 +79,15 @@ class QTableTrainer:
                 old_value = self.qtable.q_table[fen][action]
                 next_value = self.qtable.q_table[new_fen][best_next] if best_next else 0
                 new_value = old_value + self.alpha * (reward + self.gamma * next_value - old_value)
-                # Update Q-table for all symmetries
                 for sym_fen, sym_action in State.fen_action_symmetries(fen, action):
                     if not self.qtable.state_exists(sym_fen):
-                        board = chess.Board(sym_fen)
-                        self.qtable.add_state(sym_fen, [move.uci() for move in board.legal_moves])
-                        
+                        board_sym = chess.Board(sym_fen)
+                        self.qtable.add_state(sym_fen, [move.uci() for move in board_sym.legal_moves])
                     self.qtable.set_action_value(sym_fen, sym_action, new_value)
-                print(f"Episode {ep+1}, State: {fen}, Action: {action}, Reward: {reward}, New Value: {new_value}")
+                #print(f"Episode {ep+1}, State: {fen}, Action: {action}, Reward: {reward}, New Value: {new_value}")
 
                 fen = new_fen
-                board = chess.Board(fen)
 
-                # Decay epsilon after each episode
                 if done:
                     self.epsilon = max(0.01, self.epsilon * self.epsilon_decay)
                     # Early stopping: more than 15 mates in last 20 episodes
@@ -99,10 +95,14 @@ class QTableTrainer:
                         last_20 = recent_results[-20:]
                         if last_20.count('1-0') > 15:
                             print(f"Early stopping: {last_20.count('1-0')} mates in last 20 episodes.")
+                            end_time = time.time()
+                            print(f"Training completed in {end_time - start_time:.2f} seconds.")
                             engine.quit()
                             return True
                     break
 
+        end_time = time.time()
+        print(f"Training completed in {end_time - start_time:.2f} seconds.")
         engine.quit()
         return False
 

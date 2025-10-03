@@ -2,6 +2,65 @@ import chess
 
 class State:
     @staticmethod
+    def random_kr_vs_k_fen_column_a():
+        """
+        Generate a random valid FEN for KR vs k endgame with:
+        - Black king in column 'a' (col=0), row between 1 and 4
+        - White king in same row, column 'c' (col=2)
+        - Rook anywhere else except those squares
+        - Ensures kings are not adjacent and black is not in check
+        Returns:
+            str: Valid FEN string
+        """
+        import random
+        import chess
+
+        def are_kings_adjacent(wk, bk):
+            return max(abs(wk[0] - bk[0]), abs(wk[1] - bk[1])) <= 1
+
+        def is_between(a, b, c):
+            return min(a, b) < c < max(a, b)
+
+        while True:
+            bk_row = random.choice([1, 2, 3, 4])
+            bk_col = 0
+            wk_row = bk_row
+            wk_col = 2
+            # Rook can be anywhere except (bk_row, bk_col) and (wk_row, wk_col)
+            rook_positions = [(r, c) for r in range(8) for c in range(8)
+                             if (r, c) != (bk_row, bk_col) and (r, c) != (wk_row, wk_col)]
+            wr_row, wr_col = random.choice(rook_positions)
+
+            wk = (wk_row, wk_col)
+            wr = (wr_row, wr_col)
+            bk = (bk_row, bk_col)
+
+            if are_kings_adjacent(wk, bk):
+                continue
+
+            state = State(w_king=wk, w_rook=wr, b_king=bk)
+            fen = state.to_fen()
+
+            # Custom check: rook attacks black king in row/col, unless white king is between
+            in_check = False
+            # Rook and black king in same row
+            if wr_row == bk_row:
+                # Is white king between rook and black king in same row?
+                if wk_row == wr_row and is_between(wr_col, bk_col, wk_col):
+                    pass
+                else:
+                    in_check = True
+            # Rook and black king in same column
+            if wr_col == bk_col:
+                # Is white king between rook and black king in same column?
+                if wk_col == wr_col and is_between(wr_row, bk_row, wk_row):
+                    pass
+                else:
+                    in_check = True
+            if in_check:
+                continue
+            return fen
+    @staticmethod
     def fen_action_symmetries(fen, action):
         """
         Given a FEN and an action, return all FENs and actions associated with 1 or 2 symmetries/rotations using State class.
