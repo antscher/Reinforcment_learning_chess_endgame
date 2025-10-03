@@ -13,8 +13,8 @@ if __name__ == "__main__":
     trainer = QTableTrainer(qtable=qtable, epsilon_start=0.2, epsilon_decay=0.999, alpha=0.5, gamma=0.9)
 
     trained_fens = []
-    num_random_fens = 10
-    episodes_per_fen = 100
+    num_random_fens = 100
+    episodes_per_fen = 50
 
     try:
         for i in range(num_random_fens):
