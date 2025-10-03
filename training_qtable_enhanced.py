@@ -100,10 +100,11 @@ class QTableTrainer:
                         if last_20.count('1-0') > 15:
                             print(f"Early stopping: {last_20.count('1-0')} mates in last 20 episodes.")
                             engine.quit()
-                            return
+                            return True
                     break
 
         engine.quit()
+        return False
 
     def save_qtable(self, folder,filename):
         self.qtable.save(folder,filename)

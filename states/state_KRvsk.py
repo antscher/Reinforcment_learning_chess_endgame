@@ -59,7 +59,9 @@ class State:
                 b_king=new_map['k']
             )
             new_fen = new_state.to_fen().split(' ')[0]
-            new_action = transform_action(action, tf1)
+            new_action = None
+            if action is not None:
+                new_action = transform_action(action, tf1)
             results.add((new_fen, new_action))
             # Apply two transformations
             for j, tf2 in enumerate(transforms):
@@ -71,7 +73,9 @@ class State:
                     b_king=new_map2['k']
                 )
                 new_fen2 = new_state2.to_fen().split(' ')[0]
-                new_action2 = transform_action(action, lambda sq: tf2(tf1(sq)))
+                new_action2 = None
+                if action is not None:
+                    new_action2 = transform_action(action, lambda sq: tf2(tf1(sq)))
                 results.add((new_fen2, new_action2))
         return list(results)
     @staticmethod
