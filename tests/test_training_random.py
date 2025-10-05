@@ -15,12 +15,12 @@ if __name__ == "__main__":
     trained_fens = []
     list_of_times = []
     list_of_average_results = []
-    num_random_fens = 50
-    episodes_per_fen = 100
+    num_random_fens = 2
+    episodes_per_fen = 50
 
     try:
         for i in range(num_random_fens):
-            fen = State.random_kr_vs_k_fen()
+            fen = State.random_kr_vs_k_fen_column_a()
             print(f"Training on FEN {i+1}: {fen}")
             trained_bool, episode_results, time = trainer.train(episodes=episodes_per_fen, initial_fen=fen)
             if trained_bool:

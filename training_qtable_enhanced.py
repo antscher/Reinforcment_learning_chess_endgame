@@ -35,8 +35,10 @@ class QTableTrainer:
             # Initialize chess board and state
             board = chess.Board(initial_fen)
             fen = initial_fen.split(' ')[0]
+            nb_moves = 0
 
             done = False
+            nb_moves += 1
 
             while not done:
                 # White (Q-table agent)
@@ -69,6 +71,8 @@ class QTableTrainer:
                     result = board.result()
                     #print("Game over:", result)
                     reward = reward_mate if result == '1-0' else -reward_mate if result == '0-1' else reward_draw
+                    reward /= nb_moves
+
                     # Track mate results
                     episode_results.append(reward)
                 else:

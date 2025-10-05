@@ -68,7 +68,7 @@ class QTableTrainer:
                     result = board.result()
                     #print("Game over:", result)
                     reward = reward_mate if result == '1-0' else -reward_mate if result == '0-1' else reward_draw
-                    reward *= nb_moves
+                    reward /= nb_moves
                     # Track mate results
                     episode_results.append(reward)
                 else:
@@ -85,7 +85,7 @@ class QTableTrainer:
                         board_sym = chess.Board(sym_fen)
                         self.qtable.add_state(sym_fen, [move.uci() for move in board_sym.legal_moves])
                     self.qtable.set_action_value(sym_fen, sym_action, new_value)
-                #print(f"Episode {ep+1}, State: {fen}, Action: {action}, Reward: {reward}, New Value: {new_value}")
+                print(f"Episode {ep+1}, State: {fen}, Action: {action}, Reward: {reward}, New Value: {new_value}")
 
                 fen = new_fen
 
