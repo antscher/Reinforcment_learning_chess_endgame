@@ -28,7 +28,7 @@ class QTableTrainer:
         self.epsilon = self.epsilon_start
         engine = chess.engine.SimpleEngine.popen_uci(self.engine_path)
         start_time = time.time()
-        recent_results = []  # Track last 20 results
+        episode_results = []  # Track all results for plotting
 
         for ep in range(episodes):
             # Initialize chess board and state
@@ -69,7 +69,7 @@ class QTableTrainer:
                     #print("Game over:", result)
                     reward = reward_mate if result == '1-0' else -reward_mate if result == '0-1' else reward_draw
                     # Track mate results
-                    recent_results.append(result)
+                    episode_results.append(result)
                 else:
                     # Add new state to Q-table for next iteration
                     self.qtable.add_state(new_fen, [move.uci() for move in board.legal_moves])
@@ -91,20 +91,20 @@ class QTableTrainer:
                 if done:
                     self.epsilon = max(0.01, self.epsilon * self.epsilon_decay)
                     # Early stopping: more than 15 mates in last 20 episodes
-                    if len(recent_results) >= 20:
-                        last_20 = recent_results[-20:]
+                    if len(episode_results) >= 20:
+                        last_20 = episode_results[-20:]
                         if last_20.count('1-0') > 15:
                             print(f"Early stopping: {last_20.count('1-0')} mates in last 20 episodes.")
                             end_time = time.time()
                             print(f"Training completed in {end_time - start_time:.2f} seconds.")
                             engine.quit()
-                            return True
+                            return True, episode_results
                     break
 
         end_time = time.time()
         print(f"Training completed in {end_time - start_time:.2f} seconds.")
         engine.quit()
-        return False
+        return False, episode_results
 
     def save_qtable(self, folder,filename):
         self.qtable.save(folder,filename)
@@ -115,3 +115,22 @@ class QTableTrainer:
     def set_qtable(self, qtable: QTable):
         self.qtable = qtable
 
+def plot_training_results(results_list):
+    """
+    Plot training results for multiple training runs in one plot.
+    Each item in results_list is a list of results for one run.
+    """
+    import matplotlib.pyplot as plt
+    import numpy as np
+    plt.figure(figsize=(10,5))
+    for idx, results in enumerate(results_list):
+        y = [1 if r == '1-0' else 0 if r == '1/2-1/2' else -1 for r in results]
+        x = np.arange(1, len(y)+1)
+        cum_sum = np.cumsum(y)
+        plt.plot(x, cum_sum, label=f'Run {idx+1}')
+    plt.xlabel('Episode')
+    plt.ylabel('Cumulative Sum')
+    plt.title('Training Results (Combined)')
+    plt.legend()
+    plt.tight_layout()
+    plt.show()

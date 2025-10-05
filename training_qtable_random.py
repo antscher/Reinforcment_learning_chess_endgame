@@ -10,14 +10,13 @@ from states.state_KRvsk import State
 
 
 class QTableTrainer:
-    def __init__(self, qtable: QTable, epsilon_start=0.1, epsilon_decay=0.99, alpha=0.5, gamma=0.9, engine_path=r"stockfish\stockfish-windows-x86-64-avx2.exe"):
+    def __init__(self, qtable: QTable, epsilon_start=0.1, epsilon_decay=0.99, alpha=0.5, gamma=0.9):
         self.qtable = qtable
         self.epsilon_start = epsilon_start
         self.epsilon = epsilon_start
         self.epsilon_decay = epsilon_decay
         self.alpha = alpha
         self.gamma = gamma
-        self.engine_path = engine_path
 
     def train(self, episodes=1000, initial_fen=" "):
         reward_mate = 100
@@ -26,7 +25,7 @@ class QTableTrainer:
 
         self.epsilon = self.epsilon_start
         start_time = time.time()
-        recent_results = []  # Track last 20 results
+        episode_results = []  # Track all results for plotting
 
         for ep in range(episodes):
             # Initialize chess board and state
@@ -67,7 +66,7 @@ class QTableTrainer:
                     #print("Game over:", result)
                     reward = reward_mate if result == '1-0' else -reward_mate if result == '0-1' else reward_draw
                     # Track mate results
-                    recent_results.append(result)
+                    episode_results.append(result)
                 else:
                     # Add new state to Q-table for next iteration
                     self.qtable.add_state(new_fen, [move.uci() for move in board.legal_moves])
@@ -89,18 +88,18 @@ class QTableTrainer:
                 if done:
                     self.epsilon = max(0.01, self.epsilon * self.epsilon_decay)
                     # Early stopping: more than 15 mates in last 20 episodes
-                    if len(recent_results) >= 20:
-                        last_20 = recent_results[-20:]
+                    if len(episode_results) >= 20:
+                        last_20 = episode_results[-20:]
                         if last_20.count('1-0') > 15:
                             print(f"Early stopping: {last_20.count('1-0')} mates in last 20 episodes.")
                             end_time = time.time()
                             print(f"Training completed in {end_time - start_time:.2f} seconds.")
-                            return True
+                            return True, episode_results, end_time - start_time
                     break
 
         end_time = time.time()
         print(f"Training completed in {end_time - start_time:.2f} seconds.")
-        return False
+        return False, episode_results, end_time - start_time
 
     def save_qtable(self, folder,filename):
         self.qtable.save(folder,filename)
@@ -111,3 +110,73 @@ class QTableTrainer:
     def set_qtable(self, qtable: QTable):
         self.qtable = qtable
 
+def plot_training_results(results_list):
+    """
+    Plot training results for multiple training runs in one plot.
+    Each item in results_list is a list of results for one run.
+    """
+    import matplotlib.pyplot as plt
+    import numpy as np
+    plt.figure(figsize=(10,5))
+    x = np.arange(1, len(results_list)+1)
+    plt.plot(x, results_list, label=f'Results')
+    plt.xlabel('Episode')
+    plt.ylabel('Reward')
+    plt.title('Training Rewards per Episode (Combined)')
+    plt.legend()
+    plt.show()
+
+def plot_avg_reward_and_time(avg_rewards, times):
+    """
+    Plot average reward and execution time for multiple training runs.
+    Args:
+        avg_rewards (list): List of average rewards per run.
+        times (list): List of execution times (seconds) per run.
+    """
+    import matplotlib.pyplot as plt
+    import numpy as np
+    runs = np.arange(1, len(avg_rewards)+1)
+    fig, ax1 = plt.subplots(figsize=(8,5))
+    color = 'tab:blue'
+    ax1.set_xlabel('Run')
+    ax1.set_ylabel('Average Reward', color=color)
+    ax1.plot(runs, avg_rewards, 'o-', color=color, label='Average Reward')
+    # Improved polynomial curve (approximation) for average reward
+    if len(avg_rewards) > 3:
+        z = np.polyfit(runs, avg_rewards, 3)
+        p = np.poly1d(z)
+        ax1.plot(runs, p(runs), '-', color='purple', label='Reward Approximation (deg 3)')
+    elif len(avg_rewards) > 2:
+        z = np.polyfit(runs, avg_rewards, 2)
+        p = np.poly1d(z)
+        ax1.plot(runs, p(runs), '-', color='purple', label='Reward Approximation (deg 2)')
+    elif len(avg_rewards) > 1:
+        z = np.polyfit(runs, avg_rewards, 1)
+        p = np.poly1d(z)
+        ax1.plot(runs, p(runs), '--', color='gray', label='Reward Trend')
+    ax1.tick_params(axis='y', labelcolor=color)
+
+    ax2 = ax1.twinx()
+    color = 'tab:red'
+    ax2.set_ylabel('Execution Time (s)', color=color)
+    ax2.plot(runs, times, 's--', color=color, label='Execution Time')
+    # Improved polynomial curve (approximation) for execution time
+    if len(times) > 3:
+        z_time = np.polyfit(runs, times, 3)
+        p_time = np.poly1d(z_time)
+        ax2.plot(runs, p_time(runs), '-', color='green', label='Time Approximation (deg 3)')
+    elif len(times) > 2:
+        z_time = np.polyfit(runs, times, 2)
+        p_time = np.poly1d(z_time)
+        ax2.plot(runs, p_time(runs), '-', color='green', label='Time Approximation (deg 2)')
+    elif len(times) > 1:
+        z_time = np.polyfit(runs, times, 1)
+        p_time = np.poly1d(z_time)
+        ax2.plot(runs, p_time(runs), ':', color='orange', label='Time Trend')
+    ax2.tick_params(axis='y', labelcolor=color)
+
+    plt.title('Average Reward and Execution Time per Training Run')
+    fig.tight_layout()
+    ax1.legend(loc='upper left')
+    ax2.legend(loc='upper right')
+    plt.show()
