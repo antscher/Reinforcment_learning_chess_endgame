@@ -10,13 +10,13 @@ from states.state_KRvsk import State
 # Test for QTableTrainer training
 if __name__ == "__main__":
     qtable = QTable()
-    trainer = QTableTrainer(qtable=qtable, epsilon_start=0.2, epsilon_decay=0.999, alpha=0.5, gamma=0.9)
+    trainer = QTableTrainer(qtable=qtable, epsilon_start=0.2, epsilon_decay=0.999, alpha=0.5, gamma=0.9, min_epsilon=0.1)
 
     trained_fens = []
     list_of_times = []
     list_of_average_results = []
-    num_random_fens = 500
-    episodes_per_fen = 50
+    num_random_fens = 50
+    episodes_per_fen = 100
 
     try:
         for i in range(num_random_fens):
@@ -30,7 +30,7 @@ if __name__ == "__main__":
                     trained_fens.append(sym_fen)
             #plot_training_results(episode_results)
             list_of_times.append(time)
-            average_result = sum([1 if r == '1-0' else 0 for r in episode_results]) / len(episode_results)
+            average_result = sum(episode_results) / len(episode_results)
             list_of_average_results.append(average_result)
 
     except KeyboardInterrupt:

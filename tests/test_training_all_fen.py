@@ -30,7 +30,7 @@ if __name__ == "__main__":
                     trained_fens.append(sym_fen)
             #plot_training_results(episode_results)
             list_of_times.append(time)
-            average_result = sum([1 if r == '1-0' else 0 for r in episode_results]) / len(episode_results)
+            average_result = sum(episode_results) / len(episode_results)
             list_of_average_results.append(average_result)
 
     except KeyboardInterrupt:

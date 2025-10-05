@@ -10,13 +10,14 @@ from states.state_KRvsk import State
 
 
 class QTableTrainer:
-    def __init__(self, qtable: QTable, epsilon_start=0.1, epsilon_decay=0.99, alpha=0.5, gamma=0.9):
+    def __init__(self, qtable: QTable, epsilon_start=0.1, epsilon_decay=0.99, alpha=0.5, gamma=0.9, min_epsilon=0.01):
         self.qtable = qtable
         self.epsilon_start = epsilon_start
         self.epsilon = epsilon_start
         self.epsilon_decay = epsilon_decay
         self.alpha = alpha
         self.gamma = gamma
+        self.min_epsilon = min_epsilon
 
     def train(self, episodes=1000, initial_fen=" "):
         reward_mate = 100
@@ -31,10 +32,12 @@ class QTableTrainer:
             # Initialize chess board and state
             board = chess.Board(initial_fen)
             fen = initial_fen.split(' ')[0]
+            nb_moves = 0
 
             done = False
 
             while not done:
+                nb_moves += 1
                 # White (Q-table agent)
                 legal_moves = [move.uci() for move in board.legal_moves]
                 self.qtable.add_state(fen,  legal_moves)
@@ -65,8 +68,9 @@ class QTableTrainer:
                     result = board.result()
                     #print("Game over:", result)
                     reward = reward_mate if result == '1-0' else -reward_mate if result == '0-1' else reward_draw
+                    reward *= nb_moves
                     # Track mate results
-                    episode_results.append(result)
+                    episode_results.append(reward)
                 else:
                     # Add new state to Q-table for next iteration
                     self.qtable.add_state(new_fen, [move.uci() for move in board.legal_moves])
@@ -86,7 +90,8 @@ class QTableTrainer:
                 fen = new_fen
 
                 if done:
-                    self.epsilon = max(0.01, self.epsilon * self.epsilon_decay)
+                    self.epsilon = max(self.min_epsilon, self.epsilon * self.epsilon_decay)
+                """
                     # Early stopping: more than 15 mates in last 20 episodes
                     if len(episode_results) >= 20:
                         last_20 = episode_results[-20:]
@@ -96,6 +101,7 @@ class QTableTrainer:
                             print(f"Training completed in {end_time - start_time:.2f} seconds.")
                             return True, episode_results, end_time - start_time
                     break
+                """
 
         end_time = time.time()
         print(f"Training completed in {end_time - start_time:.2f} seconds.")
