@@ -98,13 +98,13 @@ class QTableTrainer:
                             end_time = time.time()
                             print(f"Training completed in {end_time - start_time:.2f} seconds.")
                             engine.quit()
-                            return True, episode_results
+                            return True, episode_results, end_time - start_time
                     break
 
         end_time = time.time()
         print(f"Training completed in {end_time - start_time:.2f} seconds.")
         engine.quit()
-        return False, episode_results
+        return False, episode_results, end_time - start_time
 
     def save_qtable(self, folder,filename):
         self.qtable.save(folder,filename)
@@ -115,22 +115,57 @@ class QTableTrainer:
     def set_qtable(self, qtable: QTable):
         self.qtable = qtable
 
-def plot_training_results(results_list):
+def plot_avg_reward_and_time(avg_rewards, times):
     """
-    Plot training results for multiple training runs in one plot.
-    Each item in results_list is a list of results for one run.
+    Plot average reward and execution time for multiple training runs.
+    Args:
+        avg_rewards (list): List of average rewards per run.
+        times (list): List of execution times (seconds) per run.
     """
     import matplotlib.pyplot as plt
     import numpy as np
-    plt.figure(figsize=(10,5))
-    for idx, results in enumerate(results_list):
-        y = [1 if r == '1-0' else 0 if r == '1/2-1/2' else -1 for r in results]
-        x = np.arange(1, len(y)+1)
-        cum_sum = np.cumsum(y)
-        plt.plot(x, cum_sum, label=f'Run {idx+1}')
-    plt.xlabel('Episode')
-    plt.ylabel('Cumulative Sum')
-    plt.title('Training Results (Combined)')
-    plt.legend()
-    plt.tight_layout()
+    runs = np.arange(1, len(avg_rewards)+1)
+    fig, ax1 = plt.subplots(figsize=(8,5))
+    color = 'tab:blue'
+    ax1.set_xlabel('Run')
+    ax1.set_ylabel('Average Reward', color=color)
+    ax1.plot(runs, avg_rewards, 'o-', color=color, label='Average Reward')
+    # Improved polynomial curve (approximation) for average reward
+    if len(avg_rewards) > 3:
+        z = np.polyfit(runs, avg_rewards, 3)
+        p = np.poly1d(z)
+        ax1.plot(runs, p(runs), '-', color='purple', label='Reward Approximation (deg 3)')
+    elif len(avg_rewards) > 2:
+        z = np.polyfit(runs, avg_rewards, 2)
+        p = np.poly1d(z)
+        ax1.plot(runs, p(runs), '-', color='purple', label='Reward Approximation (deg 2)')
+    elif len(avg_rewards) > 1:
+        z = np.polyfit(runs, avg_rewards, 1)
+        p = np.poly1d(z)
+        ax1.plot(runs, p(runs), '--', color='gray', label='Reward Trend')
+    ax1.tick_params(axis='y', labelcolor=color)
+
+    ax2 = ax1.twinx()
+    color = 'tab:red'
+    ax2.set_ylabel('Execution Time (s)', color=color)
+    ax2.plot(runs, times, 's--', color=color, label='Execution Time')
+    # Improved polynomial curve (approximation) for execution time
+    if len(times) > 3:
+        z_time = np.polyfit(runs, times, 3)
+        p_time = np.poly1d(z_time)
+        ax2.plot(runs, p_time(runs), '-', color='green', label='Time Approximation (deg 3)')
+    elif len(times) > 2:
+        z_time = np.polyfit(runs, times, 2)
+        p_time = np.poly1d(z_time)
+        ax2.plot(runs, p_time(runs), '-', color='green', label='Time Approximation (deg 2)')
+    elif len(times) > 1:
+        z_time = np.polyfit(runs, times, 1)
+        p_time = np.poly1d(z_time)
+        ax2.plot(runs, p_time(runs), ':', color='orange', label='Time Trend')
+    ax2.tick_params(axis='y', labelcolor=color)
+
+    plt.title('Average Reward and Execution Time per Training Run')
+    fig.tight_layout()
+    ax1.legend(loc='upper left')
+    ax2.legend(loc='upper right')
     plt.show()
