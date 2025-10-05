@@ -16,7 +16,7 @@ if __name__ == "__main__":
     list_of_times = []
     list_of_average_results = []
     num_random_fens = 2
-    episodes_per_fen = 50
+    episodes_per_fen = 10
 
     try:
         for i in range(num_random_fens):

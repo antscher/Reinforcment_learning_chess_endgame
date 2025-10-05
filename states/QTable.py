@@ -38,9 +38,9 @@ class QTable:
         with open(os.path.join(folder, filename), 'w') as f:
             json.dump(serializable_qtable, f)
             
-    def __init__(self):
+    def __init__(self, qtable_data={}):
         # Dictionary mapping state to action-value dictionary
-        self.q_table = {}
+        self.q_table = qtable_data
 
     def add_state(self, fen,  actions):
         """
