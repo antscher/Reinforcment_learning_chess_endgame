@@ -57,7 +57,7 @@ class QTableTrainer:
                 reward = reward_step
                 if not done:
                     # Black (engine)
-                    result = engine.play(board, chess.engine.Limit(time=0.1))
+                    result = engine.play(board, chess.engine.Limit(time=0.05))
                     board.push(result.move)
                     
                 new_fen = board.fen().split(' ')[0]
