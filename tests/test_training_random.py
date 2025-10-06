@@ -14,13 +14,13 @@ if __name__ == "__main__":
 
     trained_fens = []
     list_of_times = []
-    list_of_average_results = []
-    num_random_fens = 2
-    episodes_per_fen = 10
+    list_of_results = []
+    num_random_fens = 20
+    episodes_per_fen = 50
 
     try:
         for i in range(num_random_fens):
-            fen = State.random_kr_vs_k_fen_column_a()
+            fen = State.random_kr_vs_k_fen()
             print(f"Training on FEN {i+1}: {fen}")
             trained_bool, episode_results, time = trainer.train(episodes=episodes_per_fen, initial_fen=fen)
             if trained_bool:
@@ -30,14 +30,13 @@ if __name__ == "__main__":
                     trained_fens.append(sym_fen)
             #plot_training_results(episode_results)
             list_of_times.append(time)
-            average_result = sum(episode_results) / len(episode_results)
-            list_of_average_results.append(average_result)
+            list_of_results.append(episode_results)
 
     except KeyboardInterrupt:
         print("Training interrupted by user.")
     finally:
         # Plot average reward and time
-        plot_avg_reward_and_time(list_of_average_results, list_of_times)
+        plot_avg_reward_and_time(list_of_results, list_of_times)
         
         # Save the Q-table regardless of interruption
         trainer.save_qtable("results", "test_trained_qtable.json")
