@@ -6,7 +6,7 @@ import chess
 
 from states.QTable import QTable
 from states import State
-from states.state_KRvsk import State
+from states.state_KBBvsk import State
 
 
 class QTableTrainer:
