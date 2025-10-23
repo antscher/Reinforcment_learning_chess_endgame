@@ -15,7 +15,7 @@ if __name__ == "__main__":
     trained_fens = []
     list_of_times = []
     list_of_results = []
-    num_random_fens = 20
+    num_random_fens = 40
     episodes_per_fen = 50
 
     try:
@@ -39,5 +39,5 @@ if __name__ == "__main__":
         plot_avg_reward_and_time(list_of_results, list_of_times)
         
         # Save the Q-table regardless of interruption
-        trainer.save_qtable("results", "test_trained_qtable.json")
+        trainer.save_qtable("results", "trained_qtable_KRvsk.json")
         print("Training completed and Q-table saved.")

@@ -34,9 +34,11 @@ class QTable:
                 key = state.to_fen()
             else:
                 key = str(state)
-            serializable_qtable[key] = actions
+            # Round all values to 3 decimals
+            rounded_actions = {a: round(v, 3) for a, v in actions.items()}
+            serializable_qtable[key] = rounded_actions
         with open(os.path.join(folder, filename), 'w') as f:
-            json.dump(serializable_qtable, f)
+            json.dump(serializable_qtable, f, allow_nan=False, separators=(",", ":"))
             
     def __init__(self, qtable_data={}):
         # Dictionary mapping state to action-value dictionary
