@@ -1,3 +1,6 @@
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import random
 import time
 from typing import List, Tuple, Optional
@@ -178,7 +181,7 @@ def plot_avg_reward_and_time(all_results, times):
     ax3.set_title(f'Wins, Draws, and Win % ({win_percentage:.2f}%)')
     for bar in bars:
         yval = bar.get_height()
-        ax3.text(bar.get_x() + bar.get_width()/2.0, yval + 0.5, int(yval), ha='center', va='bottom')
+        ax3.text(bar.get_x() + bar.get_width()/2.0, yval + 0.5, int(yval), ha='center', va='bottom') # type: ignore
     plt.tight_layout()
     plt.show()
     """

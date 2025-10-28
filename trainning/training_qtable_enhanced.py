@@ -61,7 +61,7 @@ class QTableTrainer:
                 if not done:
                     # Black (engine)
                     result = engine.play(board, chess.engine.Limit(time=0.05))
-                    board.push(result.move)
+                    board.push(result.move)# type: ignore
                     
                 new_fen = board.fen().split(' ')[0]
 

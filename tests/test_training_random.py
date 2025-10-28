@@ -1,7 +1,7 @@
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from training_qtable_random import QTableTrainer, plot_avg_reward_and_time, plot_training_results
+from trainning.training_qtable_random import QTableTrainer, plot_avg_reward_and_time, plot_training_results
 from states.QTable import QTable
 from states.state_KRvsk import State
 
