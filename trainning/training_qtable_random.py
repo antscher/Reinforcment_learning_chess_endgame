@@ -136,23 +136,22 @@ def plot_training_results(results_list):
     plt.show()
 
 def plot_avg_reward_and_time(all_results, times):
+    import matplotlib.pyplot as plt
     def plot_win_stats(results_slice, title):
         wins = sum(1 for r in results_slice if r > 0)
         draws = sum(1 for r in results_slice if r <= 0)
         total_games = len(results_slice)
         win_percentage = 100 * wins / total_games if total_games > 0 else 0
-        import matplotlib.pyplot as plt
+        plt.figure(f'{title} (Win %: {win_percentage:.2f}%)')
         labels = ['Wins', 'Draws']
         values = [wins, draws]
-        fig, ax = plt.subplots(figsize=(6,4))
-        bars = ax.bar(labels, values, color=['tab:green', 'tab:gray'])
-        ax.set_ylabel('Count')
-        ax.set_title(f'{title} (Win %: {win_percentage:.2f}%)')
+        bars = plt.bar(labels, values, color=['tab:green', 'tab:gray'])
+        plt.ylabel('Count')
+        plt.title(f'{title} (Win %: {win_percentage:.2f}%)')
         for bar in bars:
             yval = bar.get_height()
-            ax.text(bar.get_x() + bar.get_width()/2.0, yval + 0.5, str(int(yval)), ha='center', va='bottom')
+            plt.text(bar.get_x() + bar.get_width()/2.0, yval + 0.5, str(int(yval)), ha='center', va='bottom')
         plt.tight_layout()
-        plt.show()
 
     # Flatten all results
     flat_results = [r for results in all_results for r in results]
@@ -164,80 +163,82 @@ def plot_avg_reward_and_time(all_results, times):
         plot_win_stats(flat_results[2*third:], 'End of Training')
     else:
         plot_win_stats(flat_results, 'Training')
-    # Plot wins, draws, losses, and win percentage
-    total_runs = len(all_results)
+
+    # Summary plot for all rewards (histogram)
+    plt.figure('Summary of All Rewards')
+    plt.hist(flat_results, bins=[-0.5, 0.5, 1.5], rwidth=0.8, color='tab:green')
+    plt.xticks([0, 1], ['Draw', 'Win'])
+    plt.xlabel('Reward')
+    plt.ylabel('Count')
+    plt.title('Summary of All Rewards')
+    plt.tight_layout()
+
+    # Plot wins, draws, and win percentage (summary bar)
     wins = sum(sum(1 for r in results if r > 0) for results in all_results)
     draws = sum(sum(1 for r in results if r <= 0) for results in all_results)
-    losses = 0  # Not used in this context, but placeholder for future
     total_games = sum(len(results) for results in all_results)
     win_percentage = 100 * wins / total_games if total_games > 0 else 0
-
-    import matplotlib.pyplot as plt
+    plt.figure(f'Wins, Draws, and Win % ({win_percentage:.2f}%)')
     labels = ['Wins', 'Draws']
     values = [wins, draws]
-    fig3, ax3 = plt.subplots(figsize=(6,4))
-    bars = ax3.bar(labels, values, color=['tab:green', 'tab:gray'])
-    ax3.set_ylabel('Count')
-    ax3.set_title(f'Wins, Draws, and Win % ({win_percentage:.2f}%)')
+    bars = plt.bar(labels, values, color=['tab:green', 'tab:gray'])
+    plt.ylabel('Count')
+    plt.title(f'Wins, Draws, and Win % ({win_percentage:.2f}%)')
     for bar in bars:
         yval = bar.get_height()
-        ax3.text(bar.get_x() + bar.get_width()/2.0, yval + 0.5, int(yval), ha='center', va='bottom') # type: ignore
+        plt.text(bar.get_x() + bar.get_width()/2.0, yval + 0.5, str(int(yval)), ha='center', va='bottom')
     plt.tight_layout()
-    plt.show()
     """
     Plot average reward and execution time for multiple training runs.
     Args:
         all_results (list): List of all training results (rewards) per run.
         times (list): List of execution times (seconds) per run.
     """
-    import matplotlib.pyplot as plt
     import numpy as np
     avg_rewards = [sum(results)/len(results)  for results in all_results]
     runs = np.arange(1, len(avg_rewards)+1)
-    # Plot average reward
-    fig1, ax1 = plt.subplots(figsize=(8,5))
+    plt.figure('Average Reward per Training Run')
     color = 'tab:blue'
-    ax1.set_xlabel('Run')
-    ax1.set_ylabel('Average Reward', color=color)
-    ax1.plot(runs, avg_rewards, 'o-', color=color, label='Average Reward')
+    plt.plot(runs, avg_rewards, 'o-', color=color, label='Average Reward')
     if len(avg_rewards) > 3:
         z = np.polyfit(runs, avg_rewards, 3)
         p = np.poly1d(z)
-        ax1.plot(runs, p(runs), '-', color='purple', label='Reward Approximation (deg 3)')
+        plt.plot(runs, p(runs), '-', color='purple', label='Reward Approximation (deg 3)')
     elif len(avg_rewards) > 2:
         z = np.polyfit(runs, avg_rewards, 2)
         p = np.poly1d(z)
-        ax1.plot(runs, p(runs), '-', color='purple', label='Reward Approximation (deg 2)')
+        plt.plot(runs, p(runs), '-', color='purple', label='Reward Approximation (deg 2)')
     elif len(avg_rewards) > 1:
         z = np.polyfit(runs, avg_rewards, 1)
         p = np.poly1d(z)
-        ax1.plot(runs, p(runs), '--', color='gray', label='Reward Trend')
-    ax1.tick_params(axis='y', labelcolor=color)
-    ax1.legend(loc='upper left')
+        plt.plot(runs, p(runs), '--', color='gray', label='Reward Trend')
+    plt.xlabel('Run')
+    plt.ylabel('Average Reward')
     plt.title('Average Reward per Training Run')
-    fig1.tight_layout()
-    plt.show()
+    plt.legend(loc='upper left')
+    plt.tight_layout()
 
     # Plot execution time
-    fig2, ax2 = plt.subplots(figsize=(8,5))
+    plt.figure('Execution Time per Training Run')
     color = 'tab:red'
-    ax2.set_xlabel('Run')
-    ax2.set_ylabel('Execution Time (s)', color=color)
-    ax2.plot(runs, times, 's--', color=color, label='Execution Time')
+    plt.plot(runs, times, 's--', color=color, label='Execution Time')
     if len(times) > 3:
         z_time = np.polyfit(runs, times, 3)
         p_time = np.poly1d(z_time)
-        ax2.plot(runs, p_time(runs), '-', color='green', label='Time Approximation (deg 3)')
+        plt.plot(runs, p_time(runs), '-', color='green', label='Time Approximation (deg 3)')
     elif len(times) > 2:
         z_time = np.polyfit(runs, times, 2)
         p_time = np.poly1d(z_time)
-        ax2.plot(runs, p_time(runs), '-', color='green', label='Time Approximation (deg 2)')
+        plt.plot(runs, p_time(runs), '-', color='green', label='Time Approximation (deg 2)')
     elif len(times) > 1:
         z_time = np.polyfit(runs, times, 1)
         p_time = np.poly1d(z_time)
-        ax2.plot(runs, p_time(runs), ':', color='orange', label='Time Trend')
-    ax2.tick_params(axis='y', labelcolor=color)
-    ax2.legend(loc='upper right')
+        plt.plot(runs, p_time(runs), ':', color='orange', label='Time Trend')
+    plt.xlabel('Run')
+    plt.ylabel('Execution Time (s)')
     plt.title('Execution Time per Training Run')
-    fig2.tight_layout()
+    plt.legend(loc='upper right')
+    plt.tight_layout()
+
+    # Show all figures at once
     plt.show()

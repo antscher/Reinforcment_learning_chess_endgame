@@ -35,9 +35,10 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("Training interrupted by user.")
     finally:
-        # Plot average reward and time
-        plot_avg_reward_and_time(list_of_results, list_of_times)
-        
         # Save the Q-table regardless of interruption
         trainer.save_qtable("results", "trained_qtable_KRvsk.json")
         print("Training completed and Q-table saved.")
+
+        # Plot average reward and time
+        plot_avg_reward_and_time(list_of_results, list_of_times)
+        
