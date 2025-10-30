@@ -7,18 +7,19 @@ import time
 import numpy as np
 
 if __name__ == "__main__":
-    trainer = Trainer()
+    # Set discount factor gamma here for tuning
+    gamma = 0.9  # Change as needed
+    trainer = Trainer(gamma=gamma)
     trainer.alpha = 0.01
     trainer.baseline = 0.0
-    trainer.max_episode_length = 1000
+    trainer.max_episode_length = 100
     history_all_rewards = []
 
     # Parameters
-    train_episodes_per_fen = 10
-    num_train_fens = 100
+    train_episodes_per_fen = 100
+    num_train_fens = 20000
 
-
-    print(f"Training on {num_train_fens} different FENs, {train_episodes_per_fen} episodes each...")
+    print(f"Training on {num_train_fens} different FENs, {train_episodes_per_fen} episodes each with gamma={gamma}...")
     start = time.time()
     for fen_idx in range(num_train_fens):
         train_fen = State.random_kr_vs_k_fen()
@@ -31,7 +32,7 @@ if __name__ == "__main__":
             trainer.update_policy(trajectory, reward)
             history.append(reward)
         history_all_rewards.append(history)
-            #print(f"  Train Episode {ep+1}/{train_episodes_per_fen} | Reward: {reward} | Length: {len(trajectory)} | Baseline: {trainer.baseline:.3f}")
+        #print(f"  Train Episode {ep+1}/{train_episodes_per_fen} | Reward: {reward} | Length: {len(trajectory)} | Baseline: {trainer.baseline:.3f}")
     print(f"Training finished in {time.time()-start:.1f}s")
 
     # Save policy

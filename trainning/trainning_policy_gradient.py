@@ -11,13 +11,14 @@ class Trainer:
     White is learning agent; Black plays random.
     Reuses knowledge across episodes and canonical symmetries.
     """
-    def __init__(self):
+    def __init__(self, gamma=0.9):
         self.policy = {}  # dict[state_id] -> np.array of action probabilities
         self.alpha = 0.01
         self.baseline = 0.0
         self.max_episode_length = 100
-        self.temperature = 1.0  # for softmax exploration
+        self.temperature = 1.5  # for softmax exploration
         self.rewards_history = []
+        self.gamma = gamma  # Discount factor
 
     def get_canonical_id(self, state):
         # Use FEN board part as canonical ID
@@ -53,7 +54,7 @@ class Trainer:
     def run_episode(self, root_state):
         """
         Play one complete episode from a random root_state.
-        Store trajectory: [(state_id, action_index, legal_moves)].
+        Store trajectory: [(state_id, action_index, legal_moves, reward)].
         Return episode reward: 1 (mate) or 0 (draw).
         """
         trajectory = []
@@ -69,15 +70,19 @@ class Trainer:
             if move is None:
                 break
             action_idx = moves.index(move)
-            trajectory.append((state_id, action_idx, moves))
+            # Default step reward (encourage faster mate)
+            step_reward = 0
             board.push(move)
             state = State()
             state.create_from_fen(board.fen())
             # Check for mate/draw
             if board.is_game_over():
                 result = board.result()
-                reward = 1 if result == '1-0' else 0
-                return reward, trajectory
+                final_reward = 1 if result == '1-0' else 0
+                trajectory.append((state_id, action_idx, moves, final_reward))
+                return final_reward, trajectory
+            else:
+                trajectory.append((state_id, action_idx, moves, step_reward))
             # Black's turn (random)
             black_moves = list(board.legal_moves)
             if not black_moves:
@@ -88,20 +93,33 @@ class Trainer:
             state.create_from_fen(board.fen())
             if board.is_game_over():
                 result = board.result()
-                reward = 1 if result == '1-0' else 0
-                return reward, trajectory
+                final_reward = 1 if result == '1-0' else 0
+                # No agent move, so don't append to trajectory
+                return final_reward, trajectory
         # Max length reached: treat as draw
+        # Only append last step if trajectory is not empty
+        if trajectory:
+            last_state_id, last_action_idx, last_moves, _ = trajectory[-1]
+            trajectory.append((last_state_id, last_action_idx, last_moves, 0))
         return 0, trajectory
 
-    def update_policy(self, episode, reward):
+    def update_policy(self, episode, final_reward):
         """
-        Apply REINFORCE update for each (state, action) in episode:
-        θ <- θ + alpha * (reward - baseline) * grad log πθ(a|s)
+        Apply REINFORCE update for each (state, action) in episode using discounted returns:
+        θ <- θ + alpha * (G_t - baseline) * grad log πθ(a|s)
         Tabular softmax implementation.
         Symmetry: update all symmetric equivalents using fen_action_symmetries.
         """
-        for state_id, action_idx, moves in episode:
-            # Get all symmetries for this state and action
+        # Compute discounted returns for each step
+        rewards = [step[3] for step in episode]
+        G = np.zeros(len(rewards))
+        running_add = 0
+        for t in reversed(range(len(rewards))):
+            running_add = rewards[t] + self.gamma * running_add
+            G[t] = running_add
+        # Policy update
+        for i, (state_id, action_idx, moves, _) in enumerate(episode):
+            G_t = G[i]
             symmetries = State.fen_action_symmetries(state_id, None)
             for sym_fen, _ in symmetries:
                 if sym_fen not in self.policy:
@@ -109,11 +127,11 @@ class Trainer:
                 probs = self.policy[sym_fen]
                 grad = -probs
                 grad[action_idx] += 1
-                self.policy[sym_fen] += self.alpha * (reward - self.baseline) * grad
+                self.policy[sym_fen] += self.alpha * (G_t - self.baseline) * grad
                 self.policy[sym_fen] = np.clip(self.policy[sym_fen], 1e-8, None)
                 self.policy[sym_fen] /= np.sum(self.policy[sym_fen])
         # Update baseline
-        self.rewards_history.append(reward)
+        self.rewards_history.append(final_reward)
         if len(self.rewards_history) > 100:
             self.rewards_history = self.rewards_history[-100:]
         self.baseline = np.mean(self.rewards_history)
