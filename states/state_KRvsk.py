@@ -2,6 +2,90 @@ import chess
 
 class State:
     @staticmethod
+    def fen_uci_symmetries(fen, uci_move):
+        """
+        Given a FEN and a UCI move, return all FENs and UCI moves associated with 1 or 2 symmetries/rotations using State class.
+        Returns:
+            List of (fen, uci_move) tuples
+        """
+        def rotate_square(square, rot):
+            r, c = square
+            if rot == 0:
+                return r, c
+            elif rot == 90:
+                return c, 7 - r
+            elif rot == 180:
+                return 7 - r, 7 - c
+            elif rot == 270:
+                return 7 - c, r
+        def mirror_square(square, axis):
+            r, c = square
+            if axis == 'h':
+                return 7 - r, c
+            elif axis == 'v':
+                return r, 7 - c
+        def transform_uci_move(uci_move, transform_fn):
+            from_sq = uci_move[:2]
+            to_sq = uci_move[2:4]
+            col_from = ord(from_sq[0]) - ord('a')
+            row_from = 8 - int(from_sq[1])
+            col_to = ord(to_sq[0]) - ord('a')
+            row_to = 8 - int(to_sq[1])
+            new_row_from, new_col_from = transform_fn((row_from, col_from))
+            new_row_to, new_col_to = transform_fn((row_to, col_to))
+            new_from_sq = chr(new_col_from + ord('a')) + str(8 - new_row_from)
+            new_to_sq = chr(new_col_to + ord('a')) + str(8 - new_row_to)
+            return new_from_sq + new_to_sq + uci_move[4:]  # preserve promotion if present
+
+        state = State()
+        state.create_from_fen(fen)
+        piece_map = {
+            'K': state.pieces['WKing'],
+            'R': state.pieces['WRook'],
+            'k': state.pieces['BKing']
+        }
+
+        results = set()
+        transforms = [
+            lambda sq: rotate_square(sq, 0),
+            lambda sq: rotate_square(sq, 90),
+            lambda sq: rotate_square(sq, 180),
+            lambda sq: rotate_square(sq, 270),
+            lambda sq: mirror_square(sq, 'h'),
+            lambda sq: mirror_square(sq, 'v'),
+        ]
+        for i, tf1 in enumerate(transforms):
+            new_map = {p: tf1(pos) if pos is not None else None for p, pos in piece_map.items()}
+            if any(pos is not None and (not isinstance(pos, tuple) or len(pos) != 2) for pos in new_map.values()):
+                continue
+            new_state = State(
+                w_king=new_map['K'],
+                w_rook=new_map['R'],
+                b_king=new_map['k']
+            )
+            new_fen = new_state.to_fen().split(' ')[0]
+            new_uci = None
+            if uci_move is not None:
+                new_uci = transform_uci_move(uci_move, tf1)
+            results.add((new_fen, new_uci))
+            for j, tf2 in enumerate(transforms):
+                if i == j:
+                    continue
+                new_map2 = {p: tf2(tf1(pos)) if pos is not None else None for p, pos in piece_map.items()}
+                if any(pos is not None and (not isinstance(pos, tuple) or len(pos) != 2) for pos in new_map2.values()):
+                    continue
+                new_state2 = State(
+                    w_king=new_map2['K'],
+                    w_rook=new_map2['R'],
+                    b_king=new_map2['k']
+                )
+                new_fen2 = new_state2.to_fen().split(' ')[0]
+                new_uci2 = None
+                if uci_move is not None:
+                    new_uci2 = transform_uci_move(uci_move, lambda sq: tf2(tf1(sq)))
+                results.add((new_fen2, new_uci2))
+        return list(results)
+    @staticmethod
     def random_kr_vs_k_fen_column_a():
         """
         Generate a random valid FEN for KR vs k endgame with:
@@ -111,7 +195,10 @@ class State:
         ]
         for i, tf1 in enumerate(transforms):
             # Apply one transformation
-            new_map = {p: tf1(pos) if pos else None for p, pos in piece_map.items()}
+            new_map = {p: tf1(pos) if pos is not None else None for p, pos in piece_map.items()}
+            # Ensure all positions are valid tuples
+            if any(pos is not None and (not isinstance(pos, tuple) or len(pos) != 2) for pos in new_map.values()):
+                continue
             new_state = State(
                 w_king=new_map['K'],
                 w_rook=new_map['R'],
@@ -124,8 +211,11 @@ class State:
             results.add((new_fen, new_action))
             # Apply two transformations
             for j, tf2 in enumerate(transforms):
-                if i == j: continue
-                new_map2 = {p: tf2(tf1(pos)) if pos else None for p, pos in piece_map.items()}
+                if i == j:
+                    continue
+                new_map2 = {p: tf2(tf1(pos)) if pos is not None else None for p, pos in piece_map.items()}
+                if any(pos is not None and (not isinstance(pos, tuple) or len(pos) != 2) for pos in new_map2.values()):
+                    continue
                 new_state2 = State(
                     w_king=new_map2['K'],
                     w_rook=new_map2['R'],

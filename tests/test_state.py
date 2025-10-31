@@ -7,7 +7,7 @@ from states.QTable import QTable
 
 # Test symmetry/rotation generation for FEN and action
 print("\nSymmetries and rotations for FEN and action:")
-sample_fen = "8/8/8/8/8/2R5/k1K5/8"
+sample_fen = "8/k1K5/8/8/8/3R4/8/8 w - - 0 1"
 sample_action = "Ra3"
 symmetries = State.fen_action_symmetries(sample_fen, sample_action)
 for i, (fen, action) in enumerate(symmetries):
@@ -23,7 +23,7 @@ random_state.print_state()
 
 
 # Test State class
-fen = "8/8/1k6/8/8/4K3/3R4/8 w - - 0 1"
+fen = "8/k1K5/8/8/8/3R4/8/8 w - - 0 1"
 state = State()
 # Create state from FEN
 state.create_from_fen(fen)

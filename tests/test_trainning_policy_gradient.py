@@ -8,16 +8,24 @@ import numpy as np
 
 if __name__ == "__main__":
     # Set discount factor gamma here for tuning
-    gamma = 0.9  # Change as needed
+    gamma = 0.9
+     # Change as needed
     trainer = Trainer(gamma=gamma)
-    trainer.alpha = 0.01
+    trainer.alpha = 0.05
     trainer.baseline = 0.0
     trainer.max_episode_length = 100
     history_all_rewards = []
 
+    # Load pretrained policy if available
+    pretrained_path = 'results/policy_gradient_pretrained.pkl'
+    import os
+    if os.path.exists(pretrained_path):
+        print(f"Loading pretrained policy from {pretrained_path}")
+        trainer.load(pretrained_path)
+
     # Parameters
-    train_episodes_per_fen = 100
-    num_train_fens = 20000
+    train_episodes_per_fen = 250
+    num_train_fens = 10000
 
     print(f"Training on {num_train_fens} different FENs, {train_episodes_per_fen} episodes each with gamma={gamma}...")
     start = time.time()

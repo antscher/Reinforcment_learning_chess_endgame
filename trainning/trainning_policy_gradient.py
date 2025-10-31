@@ -16,7 +16,7 @@ class Trainer:
         self.alpha = 0.01
         self.baseline = 0.0
         self.max_episode_length = 100
-        self.temperature = 1.5  # for softmax exploration
+        self.temperature = 1.3  # for softmax exploration
         self.rewards_history = []
         self.gamma = gamma  # Discount factor
 
@@ -39,11 +39,13 @@ class Trainer:
         moves = self.legal_moves(state)
         if not moves:
             return None, state_id, []
-        # Initialize policy for all symmetries if not present
+        # Initialize policy for all symmetries using their own legal moves
         symmetries = State.fen_action_symmetries(state_id, None)
         for sym_fen, _ in symmetries:
             if sym_fen not in self.policy:
-                self.policy[sym_fen] = np.ones(len(moves)) / len(moves)
+                board_sym = chess.Board(sym_fen + ' w - - 0 1')
+                sym_moves = [move for move in board_sym.legal_moves]
+                self.policy[sym_fen] = np.ones(len(sym_moves)) / len(sym_moves) if sym_moves else np.array([])
         probs = self.policy[state_id]
         # Softmax with temperature
         logits = np.log(probs + 1e-8) / self.temperature
@@ -120,13 +122,18 @@ class Trainer:
         # Policy update
         for i, (state_id, action_idx, moves, _) in enumerate(episode):
             G_t = G[i]
-            symmetries = State.fen_action_symmetries(state_id, None)
-            for sym_fen, _ in symmetries:
+
+            action = moves[action_idx].uci()
+            for sym_fen, sym_action in State.fen_uci_symmetries(state_id, action):
                 if sym_fen not in self.policy:
+                    print("new symmetry added during update")
                     self.policy[sym_fen] = np.ones(len(moves)) / len(moves)
                 probs = self.policy[sym_fen]
                 grad = -probs
-                grad[action_idx] += 1
+                board_sym = chess.Board(sym_fen + ' w - - 0 1')
+                sym_moves = [move.uci() for move in board_sym.legal_moves]
+                sym_action_idx = sym_moves.index(sym_action)
+                grad[sym_action_idx] += 1
                 self.policy[sym_fen] += self.alpha * (G_t - self.baseline) * grad
                 self.policy[sym_fen] = np.clip(self.policy[sym_fen], 1e-8, None)
                 self.policy[sym_fen] /= np.sum(self.policy[sym_fen])
