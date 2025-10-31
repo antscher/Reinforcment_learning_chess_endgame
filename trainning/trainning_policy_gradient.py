@@ -3,7 +3,7 @@ import pickle
 import math
 import numpy as np
 import chess
-from states.state_KRvsk import State
+from states.state_KBBvsk import State
 
 class Trainer:
     """
@@ -60,11 +60,7 @@ class Trainer:
         Return episode reward: 1 (mate) or 0 (draw).
         """
         trajectory = []
-        state = State(
-            w_king=root_state.get_position('WKing'),
-            w_rook=root_state.get_position('WRook'),
-            b_king=root_state.get_position('BKing')
-        )
+        state = root_state.copy()
         board = chess.Board(state.to_fen())
         for t in range(self.max_episode_length):
             # White's turn
@@ -145,7 +141,7 @@ class Trainer:
 
     def train(self, num_episodes):
         for ep in range(num_episodes):
-            fen = State.random_kr_vs_k_fen()
+            fen = State.random_kbb_vs_k_fen()
             root_state = State()
             root_state.create_from_fen(fen)
             reward, trajectory = self.run_episode(root_state)
@@ -164,12 +160,13 @@ class Trainer:
 
 def plot_avg_reward_and_time(all_results):
     import matplotlib.pyplot as plt
-    def plot_win_stats(results_slice, title):
+    import os
+    def plot_win_stats(results_slice, title, save_dir=None):
         wins = sum(1 for r in results_slice if r > 0)
         draws = sum(1 for r in results_slice if r <= 0)
         total_games = len(results_slice)
         win_percentage = 100 * wins / total_games if total_games > 0 else 0
-        plt.figure(f'{title} (Win %: {win_percentage:.2f}%)')
+        fig = plt.figure(f'{title} (Win %: {win_percentage:.2f}%)')
         labels = ['Wins', 'Draws']
         values = [wins, draws]
         bars = plt.bar(labels, values, color=['tab:green', 'tab:gray'])
@@ -179,33 +176,48 @@ def plot_avg_reward_and_time(all_results):
             yval = bar.get_height()
             plt.text(bar.get_x() + bar.get_width()/2.0, yval + 0.5, str(int(yval)), ha='center', va='bottom')
         plt.tight_layout()
+        if save_dir:
+            fig_path = os.path.join(save_dir, f'{title.replace(" ", "_")}_win_stats.png')
+            plt.savefig(fig_path)
 
-    # Flatten all results
+    # Optionally save all figures
+    def save_fig(fig, name, save_dir):
+        if save_dir:
+            fig_path = os.path.join(save_dir, name)
+            fig.savefig(fig_path)
+
+    save_dir = "figures"
+    # Uncomment and set a directory to save figures
+    # save_dir = "figures"  # or any desired path
+    if save_dir and not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+
     flat_results = [r for results in all_results for r in results]
     n = len(flat_results)
     if n >= 3:
         third = n // 3
-        plot_win_stats(flat_results[:third], 'Beginning of Training')
-        plot_win_stats(flat_results[third:2*third], 'Middle of Training')
-        plot_win_stats(flat_results[2*third:], 'End of Training')
+        plot_win_stats(flat_results[:third], 'Beginning of Training', save_dir)
+        plot_win_stats(flat_results[third:2*third], 'Middle of Training', save_dir)
+        plot_win_stats(flat_results[2*third:], 'End of Training', save_dir)
     else:
-        plot_win_stats(flat_results, 'Training')
+        plot_win_stats(flat_results, 'Training', save_dir)
 
     # Summary plot for all rewards (histogram)
-    plt.figure('Summary of All Rewards')
+    fig1 = plt.figure('Summary of All Rewards')
     plt.hist(flat_results, bins=[-0.5, 0.5, 1.5], rwidth=0.8, color='tab:green')
     plt.xticks([0, 1], ['Draw', 'Win'])
     plt.xlabel('Reward')
     plt.ylabel('Count')
     plt.title('Summary of All Rewards')
     plt.tight_layout()
+    save_fig(fig1, 'summary_of_all_rewards.png', save_dir)
 
     # Plot wins, draws, and win percentage (summary bar)
     wins = sum(sum(1 for r in results if r > 0) for results in all_results)
     draws = sum(sum(1 for r in results if r <= 0) for results in all_results)
     total_games = sum(len(results) for results in all_results)
     win_percentage = 100 * wins / total_games if total_games > 0 else 0
-    plt.figure(f'Wins, Draws, and Win % ({win_percentage:.2f}%)')
+    fig2 = plt.figure(f'Wins, Draws, and Win % ({win_percentage:.2f}%)')
     labels = ['Wins', 'Draws']
     values = [wins, draws]
     bars = plt.bar(labels, values, color=['tab:green', 'tab:gray'])
@@ -215,10 +227,11 @@ def plot_avg_reward_and_time(all_results):
         yval = bar.get_height()
         plt.text(bar.get_x() + bar.get_width()/2.0, yval + 0.5, str(int(yval)), ha='center', va='bottom')
     plt.tight_layout()
+    save_fig(fig2, 'wins_draws_win_percent.png', save_dir)
     import numpy as np
     avg_rewards = [sum(results)/len(results)  for results in all_results]
     runs = np.arange(1, len(avg_rewards)+1)
-    plt.figure('Average Reward per Training Run')
+    fig3 = plt.figure('Average Reward per Training Run')
     color = 'tab:blue'
     plt.plot(runs, avg_rewards, 'o-', color=color, label='Average Reward')
     if len(avg_rewards) > 3:
@@ -238,6 +251,7 @@ def plot_avg_reward_and_time(all_results):
     plt.title('Average Reward per Training Run')
     plt.legend(loc='upper left')
     plt.tight_layout()
+    save_fig(fig3, 'average_reward_per_training_run.png', save_dir)
 
     # Show all figures at once
     plt.show()

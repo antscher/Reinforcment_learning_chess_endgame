@@ -2,7 +2,7 @@ import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from trainning.trainning_policy_gradient import Trainer, plot_avg_reward_and_time
-from states.state_KRvsk import State
+from states.state_KBBvsk import State
 import time
 import numpy as np
 
@@ -24,13 +24,13 @@ if __name__ == "__main__":
         trainer.load(pretrained_path)
 
     # Parameters
-    train_episodes_per_fen = 250
-    num_train_fens = 10000
+    train_episodes_per_fen = 100
+    num_train_fens = 200
 
     print(f"Training on {num_train_fens} different FENs, {train_episodes_per_fen} episodes each with gamma={gamma}...")
     start = time.time()
     for fen_idx in range(num_train_fens):
-        train_fen = State.random_kr_vs_k_fen()
+        train_fen = State.random_kbb_vs_k_mate1_fen()
         print(f"\nTraining on FEN {fen_idx+1}/{num_train_fens}: {train_fen}")
         history = []
         for ep in range(train_episodes_per_fen):

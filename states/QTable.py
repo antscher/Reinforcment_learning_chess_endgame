@@ -1,4 +1,4 @@
-from states.state_KRvsk import State
+from states.state_KBBvsk import State
 import os
 
 class QTable:
