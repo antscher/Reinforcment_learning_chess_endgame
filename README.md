@@ -30,3 +30,5 @@ try just to run "test_training.py" for running the Q_table
 - Use symetry (mirror, exactly the same state) (added)
 - Multiple Qlearning
 
+# Results
+You can test our model train on KRvsk for policy gradient and Qtable but for KBBvsk the model is too big and can't be uploaded
